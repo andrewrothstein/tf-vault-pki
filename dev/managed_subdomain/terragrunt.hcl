@@ -1,5 +1,5 @@
 terraform {
-    source = "../../modules//managed_domain"
+    source = "../../modules//managed_subdomain"
 }
 
 dependency "subca" {
@@ -10,5 +10,5 @@ inputs = {
   tld = "dev"
   domain = "drewfus.org"
   subdomain = "nj"
-  pki_intermedite_path = dependency.subca.outputs.pki_intermediate_path
+  pki_intermediate_path = dependency.subca.outputs.pki_intermediate_path
 }
