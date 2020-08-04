@@ -18,3 +18,8 @@ resource "vault_pki_secret_backend_cert" "vault" {
 output "vault_certificate" {
     value = vault_pki_secret_backend_cert.vault.certificate
 }
+
+output "vault_keypair" {
+  value = vault_pki_secret_backend_cert.vault.private_key
+  sensitive = true
+}
