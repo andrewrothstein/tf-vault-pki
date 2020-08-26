@@ -8,7 +8,7 @@ dependency "subca" {
 
 locals {
   domain_vars = read_terragrunt_config(find_in_parent_folders("domain.hcl"))
-  subdomain = "nj"
+  subdomain = "dev"
 }
 
 inputs = {

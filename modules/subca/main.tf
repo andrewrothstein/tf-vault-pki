@@ -1,5 +1,11 @@
+locals {
+    fq_domain = "${var.domain}.${var.tld}"
+    tld_underbar = replace(var.tld,".","_")
+    fq_domain_underbar = "${local.tld_underbar}_${var.domain}"
+}
+
 resource "vault_mount" "pki_intermediate" {
-    path = "pki/${var.tld}_${var.domain}_intermediate"
+    path = "pki/${local.fq_domain_underbar}_intermediate"
     type = "pki"
     default_lease_ttl_seconds = 3600
     max_lease_ttl_seconds = 86400
@@ -9,13 +15,13 @@ resource "vault_pki_secret_backend_intermediate_cert_request" "pki_intermediate"
   depends_on = [ vault_mount.pki_intermediate ]
   backend = vault_mount.pki_intermediate.path
   type = "internal"
-  common_name = "intermediate-ca.${var.domain}.${var.tld}"
+  common_name = "intermediate-ca.${local.fq_domain}"
   format = "pem"
   private_key_format = "der"
   key_type = "rsa"
   key_bits = 4096
   exclude_cn_from_sans = true
-  organization = "${var.domain}.${var.tld}"
+  organization = local.fq_domain
 }
 
 resource "vault_pki_secret_backend_root_sign_intermediate" "pki_root_sign_intermediate" {

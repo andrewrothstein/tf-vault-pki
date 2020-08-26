@@ -1,4 +1,4 @@
 locals {
     tld = "drewfus.org"
-    domain = "dev"
+    domain = "nj"
 }
