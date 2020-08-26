@@ -2,8 +2,9 @@ terraform {
     source = "../../modules//rootca"
 }
 
-dependencies {
-    paths = ["../policy"]
+dependency "policy" {
+  config_path = "../policy"
+  skip_outputs = true
 }
 
 inputs = {
