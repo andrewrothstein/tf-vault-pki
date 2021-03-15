@@ -12,6 +12,8 @@ MINIO_DATA_DIR=.minio-data
 MINIO_URL=http://localhost:9000
 MINIO_REGION=us-east-2
 TG_BUCKET=terragrunt-dev-bucket
+VAULT_ADDR=http://localhost:8200
+TF_INPUT=false
 
 launch-local-vault:
 	vault server -dev
@@ -32,13 +34,26 @@ mc-create-bucket: mc-login
 mc-delete-bucket: mc-login
 	mc rb local-minio/$$TG_BUCKET
 
+versions:
+	vault --version
+	terraform --version
+	terragrunt --version
+
+vault-status:
+	vault status
+
 tg-init:
 	terragrunt run-all init
 
 tg-validate:
 	terragrunt run-all validate
 
+tg-plan:
+	terragrunt run-all plan
+
+tg-apply:
+	terragrunt run-all apply
+
 clean:
 	find . -name '.terragrunt-cache' | xargs rm -rf
 	find . -name '.terraform' | xargs rm -rf
-

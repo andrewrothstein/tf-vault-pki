@@ -1,6 +1,26 @@
+* Run a development minio server:
+```
+arothste@DESKTOP-H8GHQ6M:~/git/github.com/andrewrothstein/tf-vault-pki$ make launch-dev-minio
+mkdir -p $MINIO_DATA_DIR
+minio server $MINIO_DATA_DIR
+Endpoint: http://172.23.182.103:9000  http://127.0.0.1:9000     
+
+Browser Access:
+   http://172.23.182.103:9000  http://127.0.0.1:9000    
+
+Object API (Amazon S3 compatible):
+   Go:         https://docs.min.io/docs/golang-client-quickstart-guide
+   Java:       https://docs.min.io/docs/java-client-quickstart-guide
+   Python:     https://docs.min.io/docs/python-client-quickstart-guide
+   JavaScript: https://docs.min.io/docs/javascript-client-quickstart-guide
+   .NET:       https://docs.min.io/docs/dotnet-client-quickstart-guide
+IAM initialization complete
+metacacheManager was initialized in non-erasure mode, skipping save
+```
 * Run a development vault server:
 ```
-arothste@DESKTOP-H8GHQ6M:~/git/github.com/andrewrothstein/tf-vault-pki$ vault server -dev
+arothste@DESKTOP-H8GHQ6M:~/git/github.com/andrewrothstein/tf-vault-pki$ make launch-dev-vault
+vault server -dev
 ==> Vault server configuration:
 
              Api Address: http://127.0.0.1:8200
@@ -17,25 +37,16 @@ arothste@DESKTOP-H8GHQ6M:~/git/github.com/andrewrothstein/tf-vault-pki$ vault se
 
 ==> Vault server started! Log data will stream in below:
 
-2021-03-14T20:08:12.454-0400 [INFO]  proxy environment: http_proxy= https_proxy= no_proxy=
-2021-03-14T20:08:12.454-0400 [WARN]  no `api_addr` value specified in config or in VAULT_API_ADDR; falling back to detection if possible, but this value should be manually set
-2021-03-14T20:08:12.460-0400 [INFO]  core: security barrier not initialized
-2021-03-14T20:08:12.460-0400 [INFO]  core: security barrier initialized: stored=1 shares=1 threshold=1
-2021-03-14T20:08:12.461-0400 [INFO]  core: post-unseal setup starting
-2021-03-14T20:08:12.475-0400 [INFO]  core: loaded wrapping token key
-2021-03-14T20:08:12.475-0400 [INFO]  core: successfully setup plugin catalog: plugin-directory=
-2021-03-14T20:08:12.475-0400 [INFO]  core: no mounts; adding default mount table
-2021-03-14T20:08:12.477-0400 [INFO]  core: successfully mounted backend: type=cubbyhole path=cubbyhole/
-2021-03-14T20:08:12.478-0400 [INFO]  core: successfully mounted backend: type=system path=sys/
-2021-03-14T20:08:12.478-0400 [INFO]  core: successfully mounted backend: type=identity path=identity/
-2021-03-14T20:08:12.480-0400 [INFO]  core: successfully enabled credential backend: type=token path=token/
-2021-03-14T20:08:12.480-0400 [INFO]  core: restoring leases
-2021-03-14T20:08:12.480-0400 [INFO]  rollback: starting rollback manager
+2021-03-14T23:20:55.671-0400 [INFO]  proxy environment: http_proxy= https_proxy= no_proxy=
+2021-03-14T23:20:55.674-0400 [WARN]  no `api_addr` value specified in config or in VAULT_API_ADDR; falling back to detection if possible, but this value should be manually set
+2021-03-14T23:20:55.691-0400 [INFO]  core: security barrier not initialized
+2021-03-14T23:20:55.691-0400 [INFO]  core: security barrier initialized: stored=1 shares=1 threshold=1
 ...
 ```
 * Ensure connectivity:
 ```
-arothste@DESKTOP-H8GHQ6M:~/git/github.com/andrewrothstein/tf-vault-pki$ ./dev-vault-env.sh
+arothste@DESKTOP-H8GHQ6M:~/git/github.com/andrewrothstein/tf-vault-pki$ make vault-status
+vault status
 Key             Value
 ---             -----
 Seal Type       shamir
@@ -45,54 +56,425 @@ Total Shares    1
 Threshold       1
 Version         1.6.3
 Storage Type    inmem
-Cluster Name    vault-cluster-028770c3
-Cluster ID      f486be92-cd31-9c43-f763-5f555881e9f5
+Cluster Name    vault-cluster-dd7a7f5a
+Cluster ID      7d443af0-2343-5fa7-587c-205977ce570d
 HA Enabled      false
+
 ```
-* Terragrunt away...
+* Create Terragrunt remote state bucket in Minio
+```
+arothste@DESKTOP-H8GHQ6M:~/git/github.com/andrewrothstein/tf-vault-pki$ make mc-create-bucket
+mc alias set local-minio $MINIO_URL $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD
+Added `local-minio` successfully.
+mc mb local-minio/$TG_BUCKET
+Bucket created successfully `local-minio/terragrunt-dev-bucket`.
+```
+* Terragrunt init
 ```
 arothste@DESKTOP-H8GHQ6M:~/git/github.com/andrewrothstein/tf-vault-pki$ terraform --version
 Terraform v0.14.8
 arothste@DESKTOP-H8GHQ6M:~/git/github.com/andrewrothstein/tf-vault-pki$ terragrunt --version
 terragrunt version v0.28.10
-arothste@DESKTOP-H8GHQ6M:~/git/github.com/andrewrothstein/tf-vault-pki$ terragrunt apply-all
-[terragrunt] 2020/08/26 00:51:09 Setting download directory for module /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/managed_subdomain to /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/managed_subdomain/.terragrunt-cache
-[terragrunt] 2020/08/26 00:51:09 Setting download directory for module /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/policy to /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/policy/.terragrunt-cache
-[terragrunt] 2020/08/26 00:51:09 Setting download directory for module /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca to /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca/.terragrunt-cache
-[terragrunt] 2020/08/26 00:51:09 Setting download directory for module /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca to /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca/.terragrunt-cache
-[terragrunt] 2020/08/26 00:51:09 Stack at /home/arothste/git/github.com/andrewrothstein/tf-vault-pki:
+arothste@DESKTOP-H8GHQ6M:~/git/github.com/andrewrothstein/tf-vault-pki$ make versions tg-init
+vault --version
+Vault v1.6.3 (b540be4b7ec48d0dd7512c8d8df9399d6bf84d76)
+terraform --version
+Terraform v0.14.8
+terragrunt --version
+terragrunt version v0.28.10
+terragrunt run-all init
+INFO[0000] Stack at /home/arothste/git/github.com/andrewrothstein/tf-vault-pki:
   => Module /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/managed_subdomain (excluded: false, dependencies: [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca])
   => Module /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/policy (excluded: false, dependencies: [])
   => Module /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca (excluded: false, dependencies: [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/policy])
-  => Module /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca (excluded: false, dependencies: [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca])
-[terragrunt] 2020/08/26 00:51:09 [terragrunt]  Are you sure you want to run 'terragrunt apply' in each folder of the stack described above? (y/n) 
-y
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca] 2020/08/26 00:51:10 Module /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca must wait for 1 dependencies to finish
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/managed_subdomain] 2020/08/26 00:51:10 Module /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/managed_subdomain must wait for 1 dependencies to finish
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/policy] 2020/08/26 00:51:10 Module /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/policy must wait for 0 dependencies to finish
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/policy] 2020/08/26 00:51:10 Running module /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/policy now
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca] 2020/08/26 00:51:10 Module /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca must wait for 1 dependencies to finish
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/policy] 2020/08/26 00:51:10 Running command: terraform --version
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/policy] 2020/08/26 00:51:10 Terraform version: 0.13.0
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/policy] 2020/08/26 00:51:10 Reading Terragrunt config file at /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/policy/terragrunt.hcl
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/policy] 2020/08/26 00:51:10 Downloading Terraform configurations from file:///home/arothste/git/github.com/andrewrothstein/tf-vault-pki/modules into /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/policy/.terragrunt-cache/Q8T4hjcnD1H8_9sSV2m3pQn6EhY/VsJusX_F7BukPQNGNPkFXIUIWmY
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/policy] 2020/08/26 00:51:10 Copying files from /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/policy into /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/policy/.terragrunt-cache/Q8T4hjcnD1H8_9sSV2m3pQn6EhY/VsJusX_F7BukPQNGNPkFXIUIWmY/policy
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/policy] 2020/08/26 00:51:10 Setting working directory to /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/policy/.terragrunt-cache/Q8T4hjcnD1H8_9sSV2m3pQn6EhY/VsJusX_F7BukPQNGNPkFXIUIWmY/policy
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/policy] 2020/08/26 00:51:10 Running command: terraform apply -input=false -auto-approve
+  => Module /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca (excluded: false, dependencies: [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca]) 
+
+Initializing the backend...
+
+Initializing provider plugins...
+- Reusing previous version of hashicorp/vault from the dependency lock file
+- Using previously-installed hashicorp/vault v2.18.0
+
+Terraform has been successfully initialized!
+
+You may now begin working with Terraform. Try running "terraform plan" to see
+any changes that are required for your infrastructure. All Terraform commands
+should now work.
+
+If you ever set or change modules or backend configuration for Terraform,
+rerun this command to reinitialize your working directory. If you forget, other
+commands will detect it and remind you to do so if necessary.
+
+Initializing the backend...
+
+Initializing provider plugins...
+- Reusing previous version of hashicorp/vault from the dependency lock file
+- Using previously-installed hashicorp/vault v2.18.0
+
+Terraform has been successfully initialized!
+
+You may now begin working with Terraform. Try running "terraform plan" to see
+any changes that are required for your infrastructure. All Terraform commands
+should now work.
+
+If you ever set or change modules or backend configuration for Terraform,
+rerun this command to reinitialize your working directory. If you forget, other
+commands will detect it and remind you to do so if necessary.
+
+Initializing the backend...
+
+Initializing provider plugins...
+- Reusing previous version of hashicorp/vault from the dependency lock file
+- Using previously-installed hashicorp/vault v2.18.0
+
+Terraform has been successfully initialized!
+
+You may now begin working with Terraform. Try running "terraform plan" to see
+any changes that are required for your infrastructure. All Terraform commands
+should now work.
+
+If you ever set or change modules or backend configuration for Terraform,
+rerun this command to reinitialize your working directory. If you forget, other
+commands will detect it and remind you to do so if necessary.
+
+Initializing the backend...
+
+Initializing provider plugins...
+- Reusing previous version of hashicorp/vault from the dependency lock file
+- Using previously-installed hashicorp/vault v2.18.0
+
+Terraform has been successfully initialized!
+
+You may now begin working with Terraform. Try running "terraform plan" to see
+any changes that are required for your infrastructure. All Terraform commands
+should now work.
+
+If you ever set or change modules or backend configuration for Terraform,
+rerun this command to reinitialize your working directory. If you forget, other
+commands will detect it and remind you to do so if necessary.
+```
+* Terragrunt validate
+```
+arothste@DESKTOP-H8GHQ6M:~/git/github.com/andrewrothstein/tf-vault-pki$ make tg-validate
+terragrunt run-all validate
+INFO[0000] Stack at /home/arothste/git/github.com/andrewrothstein/tf-vault-pki:
+  => Module /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/managed_subdomain (excluded: false, dependencies: [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca])
+  => Module /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/policy (excluded: false, dependencies: [])
+  => Module /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca (excluded: false, dependencies: [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/policy])
+  => Module /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca (excluded: false, dependencies: [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca]) 
+Success! The configuration is valid.
+
+Success! The configuration is valid.
+
+Success! The configuration is valid.
+
+Success! The configuration is valid.
+
+```
+* Terragrunt plan
+```
+arothste@DESKTOP-H8GHQ6M:~/git/github.com/andrewrothstein/tf-vault-pki$ make tg-plan
+terragrunt run-all plan
+INFO[0000] Stack at /home/arothste/git/github.com/andrewrothstein/tf-vault-pki:
+  => Module /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/managed_subdomain (excluded: false, dependencies: [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca])
+  => Module /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/policy (excluded: false, dependencies: [])
+  => Module /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca (excluded: false, dependencies: [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/policy])
+  => Module /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca (excluded: false, dependencies: [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca]) 
+
+An execution plan has been generated and is shown below.
+Resource actions are indicated with the following symbols:
+  + create
+
+Terraform will perform the following actions:
+
+  # vault_policy.policies["pki-admin"] will be created
+  + resource "vault_policy" "policies" {
+      + id     = (known after apply)
+      + name   = "pki-admin"
+      + policy = <<-EOT
+            # from https://learn.hashicorp.com/vault/secrets-management/sm-pki-engine
+            # Enable secrets engine
+            path "sys/mounts/*" {
+              capabilities = [ "create", "read", "update", "delete", "list" ]
+            }
+            
+            # List enabled secrets engine
+            path "sys/mounts" {
+              capabilities = [ "read", "list" ]
+            }
+            
+            # Work with pki secrets engine
+            path "pki*" {
+              capabilities = [ "create", "read", "update", "delete", "list", "sudo" ]
+            }
+        EOT
+    }
+
+Plan: 1 to add, 0 to change, 0 to destroy.
+
+------------------------------------------------------------------------
+
+Note: You didn't specify an "-out" parameter to save this plan, so Terraform
+can't guarantee that exactly these actions will be performed if
+"terraform apply" is subsequently run.
+
+
+An execution plan has been generated and is shown below.
+Resource actions are indicated with the following symbols:
+  + create
+
+Terraform will perform the following actions:
+
+  # vault_mount.pki_root will be created
+  + resource "vault_mount" "pki_root" {
+      + accessor                  = (known after apply)
+      + default_lease_ttl_seconds = 3600
+      + external_entropy_access   = false
+      + id                        = (known after apply)
+      + max_lease_ttl_seconds     = 86400
+      + path                      = "pki/drewfus_org_nj_root"
+      + seal_wrap                 = (known after apply)
+      + type                      = "pki"
+    }
+
+  # vault_pki_secret_backend_root_cert.pki_root will be created
+  + resource "vault_pki_secret_backend_root_cert" "pki_root" {
+      + backend              = "pki/drewfus_org_nj_root"
+      + certificate          = (known after apply)
+      + common_name          = "root-ca.nj.drewfus.org"
+      + exclude_cn_from_sans = true
+      + format               = "pem"
+      + id                   = (known after apply)
+      + issuing_ca           = (known after apply)
+      + key_bits             = 4096
+      + key_type             = "rsa"
+      + max_path_length      = -1
+      + organization         = "nj.drewfus.org"
+      + private_key_format   = "der"
+      + serial               = (known after apply)
+      + ttl                  = "87600h"
+      + type                 = "internal"
+    }
+
+Plan: 2 to add, 0 to change, 0 to destroy.
+
+Changes to Outputs:
+  + pki_root_path = "pki/drewfus_org_nj_root"
+
+------------------------------------------------------------------------
+
+Note: You didn't specify an "-out" parameter to save this plan, so Terraform
+can't guarantee that exactly these actions will be performed if
+"terraform apply" is subsequently run.
+
+
+An execution plan has been generated and is shown below.
+Resource actions are indicated with the following symbols:
+  + create
+
+Terraform will perform the following actions:
+
+  # vault_mount.pki_intermediate will be created
+  + resource "vault_mount" "pki_intermediate" {
+      + accessor                  = (known after apply)
+      + default_lease_ttl_seconds = 3600
+      + external_entropy_access   = false
+      + id                        = (known after apply)
+      + max_lease_ttl_seconds     = 86400
+      + path                      = "pki/drewfus_org_nj_intermediate"
+      + seal_wrap                 = (known after apply)
+      + type                      = "pki"
+    }
+
+  # vault_pki_secret_backend_intermediate_cert_request.pki_intermediate will be created
+  + resource "vault_pki_secret_backend_intermediate_cert_request" "pki_intermediate" {
+      + backend              = "pki/drewfus_org_nj_intermediate"
+      + common_name          = "intermediate-ca.nj.drewfus.org"
+      + csr                  = (known after apply)
+      + exclude_cn_from_sans = true
+      + format               = "pem"
+      + id                   = (known after apply)
+      + key_bits             = 4096
+      + key_type             = "rsa"
+      + organization         = "nj.drewfus.org"
+      + private_key          = (sensitive value)
+      + private_key_format   = "der"
+      + private_key_type     = (known after apply)
+      + type                 = "internal"
+    }
+
+  # vault_pki_secret_backend_intermediate_set_signed.pki_root_sign_intermediate will be created
+  + resource "vault_pki_secret_backend_intermediate_set_signed" "pki_root_sign_intermediate" {
+      + backend     = "pki/drewfus_org_nj_intermediate"
+      + certificate = (known after apply)
+      + id          = (known after apply)
+    }
+
+  # vault_pki_secret_backend_root_sign_intermediate.pki_root_sign_intermediate will be created
+  + resource "vault_pki_secret_backend_root_sign_intermediate" "pki_root_sign_intermediate" {
+      + backend         = "/root/pki"
+      + ca_chain        = (known after apply)
+      + certificate     = (known after apply)
+      + common_name     = "intermediate-ca.nj.drewfus.org"
+      + csr             = (known after apply)
+      + format          = "pem"
+      + id              = (known after apply)
+      + issuing_ca      = (known after apply)
+      + max_path_length = -1
+      + serial          = (known after apply)
+      + ttl             = "157680000"
+      + use_csr_values  = true
+    }
+
+Plan: 4 to add, 0 to change, 0 to destroy.
+
+Changes to Outputs:
+  + pki_intermediate_path = "pki/drewfus_org_nj_intermediate"
+
+------------------------------------------------------------------------
+
+Note: You didn't specify an "-out" parameter to save this plan, so Terraform
+can't guarantee that exactly these actions will be performed if
+"terraform apply" is subsequently run.
+
+
+An execution plan has been generated and is shown below.
+Resource actions are indicated with the following symbols:
+  + create
+
+Terraform will perform the following actions:
+
+  # vault_pki_secret_backend_cert.vault will be created
+  + resource "vault_pki_secret_backend_cert" "vault" {
+      + auto_renew            = false
+      + backend               = "temporary-pki-intermediate-path"
+      + ca_chain              = (known after apply)
+      + certificate           = (known after apply)
+      + common_name           = "vault.dev.nj.drewfus.org"
+      + expiration            = (known after apply)
+      + format                = "pem"
+      + id                    = (known after apply)
+      + issuing_ca            = (known after apply)
+      + min_seconds_remaining = 604800
+      + name                  = "drewfus_org_nj_dev_admin"
+      + private_key           = (sensitive value)
+      + private_key_format    = "der"
+      + private_key_type      = (known after apply)
+      + serial_number         = (known after apply)
+      + ttl                   = "3600"
+    }
+
+  # vault_pki_secret_backend_role.pki_intermediate_subdomain_admin will be created
+  + resource "vault_pki_secret_backend_role" "pki_intermediate_subdomain_admin" {
+      + allow_any_name                     = false
+      + allow_bare_domains                 = false
+      + allow_glob_domains                 = true
+      + allow_ip_sans                      = true
+      + allow_localhost                    = true
+      + allow_subdomains                   = false
+      + allowed_domains                    = [
+          + "*.dev.nj.drewfus.org",
+        ]
+      + backend                            = "temporary-pki-intermediate-path"
+      + basic_constraints_valid_for_non_ca = false
+      + client_flag                        = true
+      + code_signing_flag                  = false
+      + email_protection_flag              = false
+      + enforce_hostnames                  = true
+      + generate_lease                     = false
+      + id                                 = (known after apply)
+      + key_bits                           = 2048
+      + key_type                           = "rsa"
+      + name                               = "drewfus_org_nj_dev_admin"
+      + no_store                           = false
+      + not_before_duration                = (known after apply)
+      + require_cn                         = true
+      + server_flag                        = true
+      + ttl                                = "3600"
+      + use_csr_common_name                = true
+      + use_csr_sans                       = true
+    }
+
+Plan: 2 to add, 0 to change, 0 to destroy.
+
+Changes to Outputs:
+  + vault_certificate = (known after apply)
+  + vault_keypair     = (sensitive value)
+
+------------------------------------------------------------------------
+
+Note: You didn't specify an "-out" parameter to save this plan, so Terraform
+can't guarantee that exactly these actions will be performed if
+"terraform apply" is subsequently run.
+
+```
+* Terragrunt apply
+```
+arothste@DESKTOP-H8GHQ6M:~/git/github.com/andrewrothstein/tf-vault-pki$ make tg-apply
+terragrunt run-all apply
+INFO[0000] Stack at /home/arothste/git/github.com/andrewrothstein/tf-vault-pki:
+  => Module /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/managed_subdomain (excluded: false, dependencies: [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca])
+  => Module /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/policy (excluded: false, dependencies: [])
+  => Module /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca (excluded: false, dependencies: [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/policy])
+  => Module /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca (excluded: false, dependencies: [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca]) 
+WARN[0000] Encryption is not enabled on the S3 remote state bucket terragrunt-dev-bucket. Terraform state files may contain secrets, so we STRONGLY recommend enabling encryption!  prefix=[/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/policy] 
+WARN[0000] Versioning is not enabled for the remote state S3 bucket terragrunt-dev-bucket. We recommend enabling versioning so that you can roll back to previous versions of your Terraform state in case of error.  prefix=[/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/policy] 
+
+Initializing the backend...
+Backend configuration changed!
+
+Terraform has detected that the configuration specified for the backend
+has changed. Terraform will now check for existing state in the backends.
+
+
+
+Successfully configured the backend "s3"! Terraform will automatically
+use this backend unless the backend configuration changes.
+
+Initializing provider plugins...
+- Reusing previous version of hashicorp/vault from the dependency lock file
+- Using previously-installed hashicorp/vault v2.18.0
+
+Terraform has been successfully initialized!
+
+You may now begin working with Terraform. Try running "terraform plan" to see
+any changes that are required for your infrastructure. All Terraform commands
+should now work.
+
+If you ever set or change modules or backend configuration for Terraform,
+rerun this command to reinitialize your working directory. If you forget, other
+commands will detect it and remind you to do so if necessary.
 vault_policy.policies["pki-admin"]: Creating...
 vault_policy.policies["pki-admin"]: Creation complete after 0s [id=pki-admin]
 
 Apply complete! Resources: 1 added, 0 changed, 0 destroyed.
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/policy] 2020/08/26 00:51:11 Module /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/policy has finished successfully!
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca] 2020/08/26 00:51:11 Dependency /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/policy of module /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca just finished successfully. Module /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca must wait on 0 more dependencies.
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca] 2020/08/26 00:51:11 Running module /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca now
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca] 2020/08/26 00:51:11 Running command: terraform --version
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca] 2020/08/26 00:51:11 Terraform version: 0.13.0
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca] 2020/08/26 00:51:11 Reading Terragrunt config file at /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca/terragrunt.hcl
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca] 2020/08/26 00:51:11 Downloading Terraform configurations from file:///home/arothste/git/github.com/andrewrothstein/tf-vault-pki/modules into /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca/.terragrunt-cache/Wbfugx_ebUVIqq3UPU-u_cFLRSw/VsJusX_F7BukPQNGNPkFXIUIWmY
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca] 2020/08/26 00:51:11 Copying files from /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca into /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca/.terragrunt-cache/Wbfugx_ebUVIqq3UPU-u_cFLRSw/VsJusX_F7BukPQNGNPkFXIUIWmY/rootca
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca] 2020/08/26 00:51:11 Setting working directory to /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca/.terragrunt-cache/Wbfugx_ebUVIqq3UPU-u_cFLRSw/VsJusX_F7BukPQNGNPkFXIUIWmY/rootca
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca] 2020/08/26 00:51:11 Running command: terraform apply -input=false -auto-approve
+WARN[0001] Encryption is not enabled on the S3 remote state bucket terragrunt-dev-bucket. Terraform state files may contain secrets, so we STRONGLY recommend enabling encryption!  prefix=[/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca] 
+WARN[0001] Versioning is not enabled for the remote state S3 bucket terragrunt-dev-bucket. We recommend enabling versioning so that you can roll back to previous versions of your Terraform state in case of error.  prefix=[/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca] 
+
+Initializing the backend...
+Backend configuration changed!
+
+Terraform has detected that the configuration specified for the backend
+has changed. Terraform will now check for existing state in the backends.
+
+
+
+Successfully configured the backend "s3"! Terraform will automatically
+use this backend unless the backend configuration changes.
+
+Initializing provider plugins...
+- Reusing previous version of hashicorp/vault from the dependency lock file
+- Using previously-installed hashicorp/vault v2.18.0
+
+Terraform has been successfully initialized!
+
+You may now begin working with Terraform. Try running "terraform plan" to see
+any changes that are required for your infrastructure. All Terraform commands
+should now work.
+
+If you ever set or change modules or backend configuration for Terraform,
+rerun this command to reinitialize your working directory. If you forget, other
+commands will detect it and remind you to do so if necessary.
 vault_mount.pki_root: Creating...
 vault_mount.pki_root: Creation complete after 0s [id=pki/drewfus_org_nj_root]
 vault_pki_secret_backend_root_cert.pki_root: Creating...
@@ -102,30 +484,38 @@ Apply complete! Resources: 2 added, 0 changed, 0 destroyed.
 
 Outputs:
 
-pki_root_path = pki/drewfus_org_nj_root
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca] 2020/08/26 00:51:13 Module /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca has finished successfully!
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca] 2020/08/26 00:51:13 Dependency /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca of module /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca just finished successfully. Module /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca must wait on 0 more dependencies.
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca] 2020/08/26 00:51:13 Running module /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca now
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca] 2020/08/26 00:51:13 Running command: terraform --version
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca] 2020/08/26 00:51:13 Terraform version: 0.13.0
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca] 2020/08/26 00:51:13 Reading Terragrunt config file at /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca/terragrunt.hcl
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca] 2020/08/26 00:51:13 WARNING: Could not parse remote_state block from target config /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca/terragrunt.hcl
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca] 2020/08/26 00:51:13 WARNING: Falling back to terragrunt output.
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca] 2020/08/26 00:51:13 Running command: terraform --version
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca] 2020/08/26 00:51:13 Terraform version: 0.13.0
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca] 2020/08/26 00:51:13 Reading Terragrunt config file at /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca/terragrunt.hcl
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca] 2020/08/26 00:51:13 Downloading Terraform configurations from file:///home/arothste/git/github.com/andrewrothstein/tf-vault-pki/modules into /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca/.terragrunt-cache/Wbfugx_ebUVIqq3UPU-u_cFLRSw/VsJusX_F7BukPQNGNPkFXIUIWmY
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca] 2020/08/26 00:51:13 Copying files from /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca into /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca/.terragrunt-cache/Wbfugx_ebUVIqq3UPU-u_cFLRSw/VsJusX_F7BukPQNGNPkFXIUIWmY/rootca
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca] 2020/08/26 00:51:13 Setting working directory to /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca/.terragrunt-cache/Wbfugx_ebUVIqq3UPU-u_cFLRSw/VsJusX_F7BukPQNGNPkFXIUIWmY/rootca
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/rootca] 2020/08/26 00:51:13 Running command: terraform output -json
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca] 2020/08/26 00:51:13 Downloading Terraform configurations from file:///home/arothste/git/github.com/andrewrothstein/tf-vault-pki/modules into /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca/.terragrunt-cache/9qGBpCSRY899Tj5PuLtT2MlGfzo/VsJusX_F7BukPQNGNPkFXIUIWmY
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca] 2020/08/26 00:51:13 Copying files from /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca into /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca/.terragrunt-cache/9qGBpCSRY899Tj5PuLtT2MlGfzo/VsJusX_F7BukPQNGNPkFXIUIWmY/subca
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca] 2020/08/26 00:51:13 Setting working directory to /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca/.terragrunt-cache/9qGBpCSRY899Tj5PuLtT2MlGfzo/VsJusX_F7BukPQNGNPkFXIUIWmY/subca
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca] 2020/08/26 00:51:13 Running command: terraform apply -input=false -auto-approve
+pki_root_path = "pki/drewfus_org_nj_root"
+WARN[0004] Encryption is not enabled on the S3 remote state bucket terragrunt-dev-bucket. Terraform state files may contain secrets, so we STRONGLY recommend enabling encryption!  prefix=[/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca] 
+WARN[0004] Versioning is not enabled for the remote state S3 bucket terragrunt-dev-bucket. We recommend enabling versioning so that you can roll back to previous versions of your Terraform state in case of error.  prefix=[/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca] 
+
+Initializing the backend...
+Backend configuration changed!
+
+Terraform has detected that the configuration specified for the backend
+has changed. Terraform will now check for existing state in the backends.
+
+
+
+Successfully configured the backend "s3"! Terraform will automatically
+use this backend unless the backend configuration changes.
+
+Initializing provider plugins...
+- Reusing previous version of hashicorp/vault from the dependency lock file
+- Using previously-installed hashicorp/vault v2.18.0
+
+Terraform has been successfully initialized!
+
+You may now begin working with Terraform. Try running "terraform plan" to see
+any changes that are required for your infrastructure. All Terraform commands
+should now work.
+
+If you ever set or change modules or backend configuration for Terraform,
+rerun this command to reinitialize your working directory. If you forget, other
+commands will detect it and remind you to do so if necessary.
 vault_mount.pki_intermediate: Creating...
 vault_mount.pki_intermediate: Creation complete after 0s [id=pki/drewfus_org_nj_intermediate]
 vault_pki_secret_backend_intermediate_cert_request.pki_intermediate: Creating...
-vault_pki_secret_backend_intermediate_cert_request.pki_intermediate: Creation complete after 3s [id=pki/drewfus_org_nj_intermediate/intermediate/generate/internal]
+vault_pki_secret_backend_intermediate_cert_request.pki_intermediate: Creation complete after 1s [id=pki/drewfus_org_nj_intermediate/intermediate/generate/internal]
 vault_pki_secret_backend_root_sign_intermediate.pki_root_sign_intermediate: Creating...
 vault_pki_secret_backend_root_sign_intermediate.pki_root_sign_intermediate: Creation complete after 0s [id=pki/drewfus_org_nj_root/intermediate-ca.nj.drewfus.org]
 vault_pki_secret_backend_intermediate_set_signed.pki_root_sign_intermediate: Creating...
@@ -135,26 +525,34 @@ Apply complete! Resources: 4 added, 0 changed, 0 destroyed.
 
 Outputs:
 
-pki_intermediate_path = pki/drewfus_org_nj_intermediate
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca] 2020/08/26 00:51:16 Module /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca has finished successfully!
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/managed_subdomain] 2020/08/26 00:51:16 Dependency /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca of module /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/managed_subdomain just finished successfully. Module /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/managed_subdomain must wait on 0 more dependencies.
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/managed_subdomain] 2020/08/26 00:51:16 Running module /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/managed_subdomain now
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/managed_subdomain] 2020/08/26 00:51:16 Running command: terraform --version
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/managed_subdomain] 2020/08/26 00:51:16 Terraform version: 0.13.0
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/managed_subdomain] 2020/08/26 00:51:16 Reading Terragrunt config file at /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/managed_subdomain/terragrunt.hcl
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/managed_subdomain] 2020/08/26 00:51:16 WARNING: Could not parse remote_state block from target config /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca/terragrunt.hcl
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/managed_subdomain] 2020/08/26 00:51:16 WARNING: Falling back to terragrunt output.
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca] 2020/08/26 00:51:16 Running command: terraform --version
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca] 2020/08/26 00:51:16 Terraform version: 0.13.0
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca] 2020/08/26 00:51:16 Reading Terragrunt config file at /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca/terragrunt.hcl
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca] 2020/08/26 00:51:16 Downloading Terraform configurations from file:///home/arothste/git/github.com/andrewrothstein/tf-vault-pki/modules into /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca/.terragrunt-cache/9qGBpCSRY899Tj5PuLtT2MlGfzo/VsJusX_F7BukPQNGNPkFXIUIWmY
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca] 2020/08/26 00:51:16 Copying files from /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca into /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca/.terragrunt-cache/9qGBpCSRY899Tj5PuLtT2MlGfzo/VsJusX_F7BukPQNGNPkFXIUIWmY/subca
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca] 2020/08/26 00:51:16 Setting working directory to /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca/.terragrunt-cache/9qGBpCSRY899Tj5PuLtT2MlGfzo/VsJusX_F7BukPQNGNPkFXIUIWmY/subca
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/subca] 2020/08/26 00:51:16 Running command: terraform output -json
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/managed_subdomain] 2020/08/26 00:51:16 Downloading Terraform configurations from file:///home/arothste/git/github.com/andrewrothstein/tf-vault-pki/modules into /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/managed_subdomain/.terragrunt-cache/8txLRE27dDXxBTQGFFBVXWG1t38/VsJusX_F7BukPQNGNPkFXIUIWmY
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/managed_subdomain] 2020/08/26 00:51:16 Copying files from /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/managed_subdomain into /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/managed_subdomain/.terragrunt-cache/8txLRE27dDXxBTQGFFBVXWG1t38/VsJusX_F7BukPQNGNPkFXIUIWmY/managed_subdomain
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/managed_subdomain] 2020/08/26 00:51:16 Setting working directory to /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/managed_subdomain/.terragrunt-cache/8txLRE27dDXxBTQGFFBVXWG1t38/VsJusX_F7BukPQNGNPkFXIUIWmY/managed_subdomain
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/managed_subdomain] 2020/08/26 00:51:16 Running command: terraform apply -input=false -auto-approve
+pki_intermediate_path = "pki/drewfus_org_nj_intermediate"
+WARN[0006] Encryption is not enabled on the S3 remote state bucket terragrunt-dev-bucket. Terraform state files may contain secrets, so we STRONGLY recommend enabling encryption!  prefix=[/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/managed_subdomain] 
+WARN[0006] Versioning is not enabled for the remote state S3 bucket terragrunt-dev-bucket. We recommend enabling versioning so that you can roll back to previous versions of your Terraform state in case of error.  prefix=[/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/managed_subdomain] 
+
+Initializing the backend...
+Backend configuration changed!
+
+Terraform has detected that the configuration specified for the backend
+has changed. Terraform will now check for existing state in the backends.
+
+
+
+Successfully configured the backend "s3"! Terraform will automatically
+use this backend unless the backend configuration changes.
+
+Initializing provider plugins...
+- Reusing previous version of hashicorp/vault from the dependency lock file
+- Using previously-installed hashicorp/vault v2.18.0
+
+Terraform has been successfully initialized!
+
+You may now begin working with Terraform. Try running "terraform plan" to see
+any changes that are required for your infrastructure. All Terraform commands
+should now work.
+
+If you ever set or change modules or backend configuration for Terraform,
+rerun this command to reinitialize your working directory. If you forget, other
+commands will detect it and remind you to do so if necessary.
 vault_pki_secret_backend_role.pki_intermediate_subdomain_admin: Creating...
 vault_pki_secret_backend_role.pki_intermediate_subdomain_admin: Creation complete after 0s [id=pki/drewfus_org_nj_intermediate/roles/drewfus_org_nj_dev_admin]
 vault_pki_secret_backend_cert.vault: Creating...
@@ -164,34 +562,34 @@ Apply complete! Resources: 2 added, 0 changed, 0 destroyed.
 
 Outputs:
 
-vault_certificate = -----BEGIN CERTIFICATE-----
-MIIEizCCAnOgAwIBAgIUbn8/yrg3RX6jlcW/Y/1g/ByhgOIwDQYJKoZIhvcNAQEL
+vault_certificate = <<EOT
+-----BEGIN CERTIFICATE-----
+MIIEizCCAnOgAwIBAgIUbh0R8cQywAOVJa3V+5fG0Wch1IIwDQYJKoZIhvcNAQEL
 BQAwQjEXMBUGA1UEChMObmouZHJld2Z1cy5vcmcxJzAlBgNVBAMTHmludGVybWVk
-aWF0ZS1jYS5uai5kcmV3ZnVzLm9yZzAeFw0yMDA4MjYwNDUwNDdaFw0yMDA4MjYw
-NTUxMTdaMCMxITAfBgNVBAMTGHZhdWx0LmRldi5uai5kcmV3ZnVzLm9yZzCCASIw
-DQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBALfIvHFQWQUtTrVPjreBkXkmQnUb
-8ZPSmlGPWyzyg+R/9Un7OQH5GItidJb4HFTngpTQM6fQ8XblUpk3myJH+VkoKQ6i
-tAdkB8gDzpN9uO47l9EPQm4Kw7RHLATEjHQt8sV/nY0fVUFnrcu9KSkPPzFJlBjv
-4IZv/OBIz9reoMG5Xr2M4VdfCSgJ2jksX+ylO9Tk/nEiBEFionz9A4493akVoTiN
-fGg5miCSd6NxwJqs8YC/5uf6oJqm8E30ee5j/AY5ZD9LEDqbo6WUZLAk7r92qF+G
-Rm8F8rtV3j+ztnboKw2kj2GLrjemsTqtJFC+K10YHEwcddz2vf7oj9ZK5/8CAwEA
+aWF0ZS1jYS5uai5kcmV3ZnVzLm9yZzAeFw0yMTAzMTUwNDM2MjRaFw0yMTAzMTUw
+NTM2NTNaMCMxITAfBgNVBAMTGHZhdWx0LmRldi5uai5kcmV3ZnVzLm9yZzCCASIw
+DQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMCpHJyuPJaFQ2Bwf2HRWmVeaWjY
+oFKGhijSNMMG7qLFlwWi99Z5uyVcQoxT3hM/ropL4OP6cy+G4WxAxILv9IglJ2IU
+NXQp9FDLGk+crBG0BYmTq2Z22emyrxN/k4pKgjDJj9tN8VnfJg7BJXokcwWwORah
+snxkDQW8ekOXxVR1V34E+B9wgILFZKnIUw4IW6mEaPMr+JNxF0QpUxzvKPJxHkg3
+FX2ma8lj0GvYJk4b6XxofZJu3SR2J7elzOqbzRKh+qybs8+6Tc7FvPjP+LXYqhX9
+ZjsGsmBboCNqBwrGT/tuXPX2GdgXUcXynIb9o1Grvj4J7+0xYqmq9UCtMpkCAwEA
 AaOBlzCBlDAOBgNVHQ8BAf8EBAMCA6gwHQYDVR0lBBYwFAYIKwYBBQUHAwEGCCsG
-AQUFBwMCMB0GA1UdDgQWBBQK6XmdOUvYVtfgihVv5YK0m3/EUjAfBgNVHSMEGDAW
-gBRJLYRocvqRo9LaSTUVrAVZqNHBEDAjBgNVHREEHDAaghh2YXVsdC5kZXYubmou
-ZHJld2Z1cy5vcmcwDQYJKoZIhvcNAQELBQADggIBAG+RGHTJqZNatDajTDPfPGbV
-iOLVJf14dNN7Vvx0HT7mxO882f9hFyS/ouVgRC4bZXYNskuA2B9nZmpj9UVNZ/Ne
-gA8XazeYo0r3x2eMxg1HpAjM5m3f49ZT/oBl52GGo9DHQltcCmB1WghqqWN2sDxt
-XdViUPrU4GHojMsVSvODT291eNWEkIYNQMwWs53xjNqYUEYDJ02cmIpp2Kum3Ou4
-rcNebgV4+XlInI6T+g5S2+l1DjPqNzPA6qpnWM/vmAPw7dCKE2RpcS1061hmqBLd
-V2U0auLQrho+CW8uktveU4EyPgGR4OMXqKknqgynphjBMOcctcD+L7eOfttdu8Yw
-GfmpBvfQWjRgBpVJ9B9lyaoEo/gyfYAfARJuGkOMU7snYveReAjb0glfJNA0Ow+0
-W+ydKGsor/WFFgoTGVm+g3TKh5W2Pi8kG1w1FmyBMuqCo4zzT/RdyaELCzsC8gO1
-1tbsJjsgOFepFg4ZGe94bQ32GAV84HB0LIwx15R8Fds+comsT+U5jYYBagj8xjeX
-VUZOL7cessn+hj0Nt9ngeJdL6YA9uUAOw6AgVSnAidX/0VK8TMJpMB+h1pXFzeHD
-FFo/oFAWygEs1GB6JzN21LCJ8d5eBtZ3mYnh87OLYseCl3+LzW/ohcsGYe36tamZ
-xEMHG7z+5ndcS4eQMFpd
+AQUFBwMCMB0GA1UdDgQWBBTo/759XtZYB2Z6tGVhG8uBJV6RjzAfBgNVHSMEGDAW
+gBTBPYxmK9hB7JMxNzVaZ8ZwwgzrDjAjBgNVHREEHDAaghh2YXVsdC5kZXYubmou
+ZHJld2Z1cy5vcmcwDQYJKoZIhvcNAQELBQADggIBALflWh/z96nMTUdQXD9TUom2
+nX5OK6Qp9XKYrWp9y4IFNLNQ2qn4kVYQ5CZex8UB3f5WzL6M7oALZ6+p0I7KOMyA
+de6NuB3R0h42PlJQGdJnqZEq6ibVlMpOm/5zzYAGVUci5OR968IDIzQm/t0RiI1J
+KgV3uwZIiumK1N1nnAwHkgUxk+cbbU2umtKq64AsJRCJQMzmtcm/K1D1gWIYqeHO
+MsFLpJ9p0IMJp1TMjuLralgbCLnWI31DqKzJ6CHb7Vkcz9ayTkOu8ZgEd5yG90Nb
+xntXqPE+PMiK4Dtq+MhPpBt9OsFg63dfvE8mrmkelgzzmaR8beHXmFUBg5GvLBqs
+xoAsy4UNlcK9kCZ31hSxGjgVmLa4wvEnLpQ+O1GhrQrenb8F6rzNeJeUilMKeB4Y
+DsRrmyChK4cfY1rkeCPwwdtqlKwM3DX3sFsA3+hXw2GsbDWgFzyQ7WprdCdUF0Zl
+UtqYQqbre3Oq1ZQFJChLcelVqHW/b2LQO/NhBC/QXobB2HwL2j55ps4rdZeMkn6i
+zm0D2KKHtW4GOF4sC3WQUGx+n2KxEkBqi5ya4qzoyMd8uTqbm4nde5NlGh+wLa9y
+03FLY+xlZKGbZ0trTfV6N+1XB8+Gopmu6ZeKWOp4/7vmo6DBb36aua2iI8YfS5Cm
+V+LtnDtupL+LDkTOroPe
 -----END CERTIFICATE-----
+EOT
 vault_keypair = <sensitive>
-[terragrunt] [/home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/managed_subdomain] 2020/08/26 00:51:17 Module /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/managed_subdomain has finished successfully!
-arothste@DESKTOP-H8GHQ6M:~/git/github.com/andrewrothstein/tf-vault-pki$ 
 ```

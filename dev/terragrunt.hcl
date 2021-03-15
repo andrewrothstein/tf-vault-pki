@@ -4,7 +4,6 @@ remote_state {
   config = {
     access_key = "admin"
     secret_key = "password"
-    encrypt = true
     endpoint = "http://127.0.0.1:9000"
     force_path_style = true
     skip_credentials_validation = true
