@@ -1,9 +1,16 @@
 terraform {
-    source = "../../modules//managed_subdomain"
+  source = "../../modules//managed_subdomain"
+}
+
+include {
+  path = find_in_parent_folders()
 }
 
 dependency "subca" {
-    config_path = "../subca"
+  config_path = "../subca"
+  mock_outputs = {
+    pki_intermediate_path = "temporary-pki-intermediate-path"
+  }
 }
 
 locals {

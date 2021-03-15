@@ -1,5 +1,9 @@
 terraform {
-    source = "../../modules//rootca"
+  source = "../../modules//rootca"
+}
+
+include {
+  path = find_in_parent_folders()
 }
 
 dependency "policy" {

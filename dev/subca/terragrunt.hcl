@@ -1,9 +1,16 @@
 terraform {
-    source = "../../modules//subca"
+  source = "../../modules//subca"
+}
+
+include {
+  path = find_in_parent_folders()
 }
 
 dependency "rootca" {
-    config_path = "../rootca"
+  config_path = "../rootca"
+  mock_outputs = {
+    pki_root_path = "/root/pki"
+  }
 }
 
 locals {

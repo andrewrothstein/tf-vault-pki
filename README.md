@@ -6,24 +6,31 @@ arothste@DESKTOP-H8GHQ6M:~/git/github.com/andrewrothstein/tf-vault-pki$ vault se
              Api Address: http://127.0.0.1:8200
                      Cgo: disabled
          Cluster Address: https://127.0.0.1:8201
-              Go Version: go1.14.4
+              Go Version: go1.15.7
               Listener 1: tcp (addr: "127.0.0.1:8200", cluster address: "127.0.0.1:8201", max_request_duration: "1m30s", max_request_size: "33554432", tls: "disabled")
                Log Level: info
                    Mlock: supported: true, enabled: false
            Recovery Mode: false
                  Storage: inmem
-                 Version: Vault v1.5.0
-...
-2020-08-25T17:33:59.980-0400 [INFO]  rollback: starting rollback manager
-2020-08-25T17:33:59.980-0400 [INFO]  identity: entities restored
-2020-08-25T17:33:59.980-0400 [INFO]  identity: groups restored
-2020-08-25T17:33:59.980-0400 [INFO]  expiration: lease restore complete
-2020-08-25T17:33:59.980-0400 [INFO]  core: post-unseal setup complete
-2020-08-25T17:33:59.980-0400 [INFO]  core: vault is unsealed
-2020-08-25T17:33:59.983-0400 [INFO]  core: successful mount: namespace= path=secret/ type=kv
-2020-08-25T17:33:59.993-0400 [INFO]  secrets.kv.kv_e70728dc: collecting keys to upgrade
-2020-08-25T17:33:59.993-0400 [INFO]  secrets.kv.kv_e70728dc: done collecting keys: num_keys=1
-2020-08-25T17:33:59.993-0400 [INFO]  secrets.kv.kv_e70728dc: upgrading keys finished
+                 Version: Vault v1.6.3
+             Version Sha: b540be4b7ec48d0dd7512c8d8df9399d6bf84d76
+
+==> Vault server started! Log data will stream in below:
+
+2021-03-14T20:08:12.454-0400 [INFO]  proxy environment: http_proxy= https_proxy= no_proxy=
+2021-03-14T20:08:12.454-0400 [WARN]  no `api_addr` value specified in config or in VAULT_API_ADDR; falling back to detection if possible, but this value should be manually set
+2021-03-14T20:08:12.460-0400 [INFO]  core: security barrier not initialized
+2021-03-14T20:08:12.460-0400 [INFO]  core: security barrier initialized: stored=1 shares=1 threshold=1
+2021-03-14T20:08:12.461-0400 [INFO]  core: post-unseal setup starting
+2021-03-14T20:08:12.475-0400 [INFO]  core: loaded wrapping token key
+2021-03-14T20:08:12.475-0400 [INFO]  core: successfully setup plugin catalog: plugin-directory=
+2021-03-14T20:08:12.475-0400 [INFO]  core: no mounts; adding default mount table
+2021-03-14T20:08:12.477-0400 [INFO]  core: successfully mounted backend: type=cubbyhole path=cubbyhole/
+2021-03-14T20:08:12.478-0400 [INFO]  core: successfully mounted backend: type=system path=sys/
+2021-03-14T20:08:12.478-0400 [INFO]  core: successfully mounted backend: type=identity path=identity/
+2021-03-14T20:08:12.480-0400 [INFO]  core: successfully enabled credential backend: type=token path=token/
+2021-03-14T20:08:12.480-0400 [INFO]  core: restoring leases
+2021-03-14T20:08:12.480-0400 [INFO]  rollback: starting rollback manager
 ...
 ```
 * Ensure connectivity:
@@ -36,17 +43,18 @@ Initialized     true
 Sealed          false
 Total Shares    1
 Threshold       1
-Version         1.5.0
-Cluster Name    vault-cluster-8d3f1b29
-Cluster ID      7f5daa1c-cece-78e4-d16d-0961c5125d3c
+Version         1.6.3
+Storage Type    inmem
+Cluster Name    vault-cluster-028770c3
+Cluster ID      f486be92-cd31-9c43-f763-5f555881e9f5
 HA Enabled      false
 ```
 * Terragrunt away...
 ```
 arothste@DESKTOP-H8GHQ6M:~/git/github.com/andrewrothstein/tf-vault-pki$ terraform --version
-Terraform v0.13.0
+Terraform v0.14.8
 arothste@DESKTOP-H8GHQ6M:~/git/github.com/andrewrothstein/tf-vault-pki$ terragrunt --version
-terragrunt version v0.23.35
+terragrunt version v0.28.10
 arothste@DESKTOP-H8GHQ6M:~/git/github.com/andrewrothstein/tf-vault-pki$ terragrunt apply-all
 [terragrunt] 2020/08/26 00:51:09 Setting download directory for module /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/managed_subdomain to /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/managed_subdomain/.terragrunt-cache
 [terragrunt] 2020/08/26 00:51:09 Setting download directory for module /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/policy to /home/arothste/git/github.com/andrewrothstein/tf-vault-pki/dev/policy/.terragrunt-cache
