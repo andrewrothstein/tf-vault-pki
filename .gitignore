@@ -1,5 +1,4 @@
 .terraform/
 .terragrunt-cache/
 terraform.*
-**/.terraform.lock.hcl
 .minio-data
