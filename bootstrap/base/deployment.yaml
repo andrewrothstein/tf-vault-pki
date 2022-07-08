@@ -1,0 +1,66 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tg-dev-env
+spec:
+  selector:
+    matchLabels:
+      app: tg-dev-env
+  template:
+    metadata:
+      labels:
+        app: tg-dev-env
+    spec:
+      containers:
+      - name: minio
+        image: ghcr.io/andrewrothstein/ansible-minio:ubuntu_jammy
+        imagePullPolicy: Always
+        command:
+          - sh
+          - -lc
+          - |
+            set -ex
+            /usr/local/bin/minio server \
+              --address localhost:9000 \
+              --console-address localhost:9001 \
+              ${MINIO_DATA_DIR}
+        env:
+        - name: MINIO_ROOT_USER
+          value: minio-root-admin
+        - name: MINIO_ROOT_PASSWORD
+          value: minio-root-password123
+        - name: MINIO_DATA_DIR
+          value: /mnt/minio
+        - name: MINIO_URL
+          value: http://localhost:9000
+        - name: MINIO_REGION
+          value: us-east-2
+        ports:
+        - name: http
+          containerPort: 9000
+          protocol: TCP
+        - name: console
+          containerPort: 9001
+          protocol: TCP
+        volumeMounts:
+        - name: minio
+          mountPath: /mnt/minio
+      - name: vault
+        image: ghcr.io/andrewrothstein/ansible-vault:ubuntu_jammy
+        imagePullPolicy: Always
+        command:
+        - /usr/local/bin/vault
+        - server
+        - -dev
+        env:
+        - name: VAULT_DEV_ROOT_TOKEN_ID
+          value: vault-dev-root-token
+        ports:
+        - name: http
+          containerPort: 8200
+          protocol: TCP
+      volumes:
+      - name: minio
+        persistentVolumeClaim:
+          claimName: minio
